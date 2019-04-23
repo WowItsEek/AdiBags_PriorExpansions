@@ -169,7 +169,7 @@ function setFilter:Filter(slotData)
           elseif (itemSubType == 'Metal & Stone') and (slotData.itemId < kMinOre) then
             return 'Old Metal & Stone', 'Prior Expansion'
           elseif (itemSubType == 'Cooking') and (slotData.itemId < kMinFood) then
-            return 'Old Cooking', 'Prior Expansion'
+            return 'Old Cooking', 'Prior Expansion' 
           elseif (itemSubType == 'Enchanting') and (slotData.itemId < kMinEnchanting) then
             return 'Old Enchanting', 'Prior Expansion'
           elseif (itemSubType == 'Jewelcrafting') and (slotData.itemId < kMinGems) then
@@ -182,9 +182,9 @@ function setFilter:Filter(slotData)
               return 'Old Food & Drink', 'Prior Expansion'
             elseif ((itemSubType == 'Potion') or (itemSubType == 'Flask') or (itemSubType == 'Elixir')) and (slotData.itemId < kMinPotion) then
               return 'Old Potions etc.', 'Prior Expansion'
-            elseif (itemSubType == 'Item Enhancement') and (slotData.itemId < kMinItemEnhancement) then
+            end
+        elseif (itemType == 'Item Enhancement') and (slotData.itemId < kMinItemEnhancement) then
               return 'Old Item Enhancement', 'Prior Expansion'
-              end
         elseif  ((itemType == 'Weapon') or (itemType == 'Armor')) and (bindType) then
             if (itemRarity == 5) and (self.db.profile.enableLegendaries) then --legendaries
               return 'Legendary', 'Prior Expansion'
