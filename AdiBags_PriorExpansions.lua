@@ -1,10 +1,8 @@
 --[[
-AdiBags_ExpansionGroups - Adds filters by Expansion ID to AdiBags.
+AdiBags_ExpansionGroups - Adds grouping by Expansion ID to Adirelle's fantastic bag addon AdiBags.
 Copyright 2019 Ggreg Taylor
 All rights reserved.
 --]]
-
-local _, ns = ...
 
 local addon = LibStub('AceAddon-3.0'):GetAddon('AdiBags')
 local L = setmetatable({}, {__index = addon.L})
@@ -13,9 +11,22 @@ local kMinWeapon = 124525
 local kMinArmor = 154177
 local kCategory = 'Prior Expansion'
 local kPfx = '#'
-
 --array values are category/subcat,minitemid, and if 4th variable replace subcat
 local arrItemType = {'Tradeskill:Cloth:152576','Tradeskill:Herb:152505', 'Tradeskill:Food:152592','Tradeskill:Metal & Stone:152512','Tradeskill:Leather:152541','Tradeskill:Enchanting:152875','Tradeskill:Jewelcrafting:153700','Consumable:Potion:151609:Potions etc.','Consumable:Elixir:151609:Potions etc.', 'Consumable:Flask:151609:Potions etc.', 'Consumable:Food & Drink:151609', 'Item Enhancement:Weapon:151609:Item Enhancement'}
+
+local tooltip
+local function create()
+  local tip, leftside = CreateFrame("GameTooltip"), {}
+  for i = 1,6 do
+    local L,R = tip:CreateFontString(), tip:CreateFontString()
+    L:SetFontObject(GameFontNormal)
+    R:SetFontObject(GameFontNormal)
+    tip:AddFontStrings(L,R)
+    leftside[i] = L
+  end
+  tip.leftside = leftside
+  return tip
+end
 
 local setFilter = addon:RegisterFilter("PriorExpansion", 47, 'ABEvent-1.0')
 setFilter.uiName = L['Prior Expansion Groups']
@@ -49,7 +60,7 @@ function setFilter:GetOptions()
       desc = L['Check this if you want to group by prior expansion. Prior expansion group bag labels are prefixed with #.'],
       width = 'double',
       type = 'toggle',
-      order = 55,
+      order = 25,
     },
     priorExpansionGear = {
       name = L['Equippable Item Sub-Groupings'],
@@ -62,19 +73,18 @@ function setFilter:GetOptions()
           type = 'description',
           order = 10,
         },
-        --- BoE & BoA tbd next version
-        -- enableBoE = {
-        --   name = L['Bind on Equip Gear'],
-        --   desc = L['Check to group Bind on Equip armor and weapons from prior expansions.'],
-        --   type = 'toggle',
-        --   order = 20,
-        -- },
-        -- enableBoP = {
-        --   name = L['Soulbound Gear'],
-        --   desc = L['Check to group Soulbound armor and weapons from prior expansions.'],
-        --   type = 'toggle',
-        --   order = 30,
-        -- },
+        enableBoE = {
+          name = L['Bind on Equip Gear'],
+          desc = L['Check to group Bind on Equip armor and weapons from prior expansions.'],
+          type = 'toggle',
+          order = 20,
+        },
+        enableBoP = {
+          name = L['Soulbound Gear'],
+          desc = L['Check to group Soulbound armor and weapons from prior expansions.'],
+          type = 'toggle',
+          order = 30,
+        },
         enableLegendaries = {
           name = L['Group Legendaries'],
           desc = L['Check to group Legendaries from prior expansions.'],
@@ -112,6 +122,12 @@ function setFilter:GetOptions()
           type = 'toggle',
           order = 40,
         },
+        -- enableToOpen = {
+        --   name = L['Group Unopened Loot.'],
+        --   desc = L['Check to group lockboxes, bonus caches and other loot containers. Yeah, it\'s not expansion related, but it\'s handy!'],
+        --   type = 'toggle',
+        --   order = 50,
+        -- },
       }
     },
   }, addon:GetOptionHandler(self, false, function() return self:Update() end)
@@ -140,7 +156,6 @@ function setFilter:Filter(slotData)
     else
       newSubCategory = currSubCategory
     end
-    -----FIX TO CHECK MATS OR CONSUMABLES CHECKED
     if ((self.db.profile.enableMats) and (currCategory=='Tradeskill')) then
       if (itemType == currCategory) and (itemSubType == currSubCategory) and (slotData.itemId < tonumber(currMinItemID)) then
           return kPfx .. newSubCategory, kCategory
@@ -151,18 +166,40 @@ function setFilter:Filter(slotData)
       end
     end
   end
-  -- end for Cat/Subcat loop from Array
+  -- End for Category/Subcategory loop from Array
   -- start gear checks
   if  ((itemType == 'Weapon') or (itemType == 'Armor')) then
     if (itemRarity == 5) and (self.db.profile.enableLegendaries) then --legendaries
       return  kPfx .. 'Legendary', kCategory
     elseif (itemRarity == 6) and (self.db.profile.enableArtifacts)  then --Artifacts
       return  kPfx .. 'Artifact', kCategory
-    -- BoA/BoE tbd -- (self.db.profile.enableBoE) or (self.db.profile.enableBoP)
-    -- elseif (itemType == 'Weapon') and (slotData.itemId < kMinWeapon) and (self.db.profile.enableBoP) then -- Old weapons
-    --     return kPfx .. 'Weapon', kCategory
-    -- elseif (itemType == 'Armor') and (slotData.itemId < kMinArmor) and (self.db.profile.enableBoP) then -- Old armor
-    --     return kPfx .. 'Armor', kCategory
+    -- Blizz's values for soulbound are funky, so have to force scan tooltip
+    else      
+      tooltip = tooltip or create()
+      tooltip:SetOwner(UIParent,"ANCHOR_NONE")
+      tooltip:ClearLines()
+    
+      if slotData.bag == BANK_CONTAINER then
+        tooltip:SetInventoryItem("player", BankButtonIDToInvSlotID(slotData.slot, nil))
+      else
+        tooltip:SetBagItem(slotData.bag, slotData.slot)
+      end
+      -- Loop through item tooltip to check if BoP or Boe
+      for i = 1,6 do
+        local t = tooltip.leftside[i]:GetText()
+
+        if self.db.profile.enableBoE and t == ITEM_BIND_ON_EQUIP and slotData.itemId < 154177 then
+          return  kPfx .. 'BoE', kCategory
+        elseif self.db.profile.enableBoP and (t == ITEM_SOULBOUND) and slotData.itemId < 154177 then
+          return  kPfx .. 'BoP', kCategory
+        -- move outside of armor/weapon if statement
+        -- elseif self.db.profile.enableToOpen and (t == ITEM_OPENABLE or t == LOCKED) then
+        --   return  'Open Me\!', 'New'
+       end
+      end
+      tooltip:Hide()
+
     end
+  else  
   end
 end
