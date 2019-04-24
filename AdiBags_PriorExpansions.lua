@@ -9,10 +9,6 @@ local _, ns = ...
 local addon = LibStub('AceAddon-3.0'):GetAddon('AdiBags')
 local L = setmetatable({}, {__index = addon.L})
 
-local currExpansionMinID = 154177
-local currExpansionName = 'Battle for Azeroth'
-local currExpansionID = 7
-local priorMaxLevel = 110
 local kMinWeapon = 124525
 local kMinArmor = 154177
 local kCategory = 'Prior Expansion'
@@ -66,6 +62,7 @@ function setFilter:GetOptions()
           type = 'description',
           order = 10,
         },
+        --- BoE & BoA tbd next version
         -- enableBoE = {
         --   name = L['Bind on Equip Gear'],
         --   desc = L['Check to group Bind on Equip armor and weapons from prior expansions.'],
@@ -152,46 +149,20 @@ function setFilter:Filter(slotData)
       if (itemType == currCategory) and (itemSubType == currSubCategory) and (slotData.itemId < tonumber(currMinItemID)) then
           return kPfx .. newSubCategory, kCategory
       end
-    -- elseif (self.db.profile.enableConsumables) and (currCategory=='Item Enhancement') then
-    --   if (itemType == currCategory) and (itemSubType == currSubCategory) and (slotData.itemId < tonumber(currMinItemID)) then
-    --       return kPfx .. newSubCategory, kCategory
-    --   end
     end
   end
   -- end for Cat/Subcat loop from Array
   -- start gear checks
   if  ((itemType == 'Weapon') or (itemType == 'Armor')) then
     if (itemRarity == 5) and (self.db.profile.enableLegendaries) then --legendaries
-      return 'Legendary', kCategory
+      return  kPfx .. 'Legendary', kCategory
     elseif (itemRarity == 6) and (self.db.profile.enableArtifacts)  then --Artifacts
-      return 'Artifact', kCategory
-    elseif (itemType == 'Weapon') and (slotData.itemId < kMinWeapon) and (self.db.profile.enableBoP) then -- Old weapons
-        return kPfx .. 'Weapon', kCategory
-    elseif (itemType == 'Armor') and (slotData.itemId < kMinArmor) and (self.db.profile.enableBoP) then -- Old armor
-        return kPfx .. 'Armor', kCategory
+      return  kPfx .. 'Artifact', kCategory
+    -- BoA/BoE tbd -- (self.db.profile.enableBoE) or (self.db.profile.enableBoP)
+    -- elseif (itemType == 'Weapon') and (slotData.itemId < kMinWeapon) and (self.db.profile.enableBoP) then -- Old weapons
+    --     return kPfx .. 'Weapon', kCategory
+    -- elseif (itemType == 'Armor') and (slotData.itemId < kMinArmor) and (self.db.profile.enableBoP) then -- Old armor
+    --     return kPfx .. 'Armor', kCategory
     end
   end
 end
-    --     -------------------
-    --     -------------------
-    --     elseif (self.db.profile.enableBoE) or (self.db.profile.enableBoP) then 
-    -- local tooltip
-    -- local function create()
-    --   local tip, leftside = CreateFrame("GameTooltip"), {}
-    --   for i = 1,6 do
-    --     local L,R = tip:CreateFontString(), tip:CreateFontString()
-    --     L:SetFontObject(GameFontNormal)
-    --     R:SetFontObject(GameFontNormal)
-    --     tip:AddFontStrings(L,R)
-    --     leftside[i] = L
-    --   end
-    --   tip.leftside = leftside
-    --   return tip
-    -- end
-    --     -------------------
-
-
-  
-  
-  
-  
