@@ -12,19 +12,19 @@ local kMinArmor = 154177
 local kCategory = 'Prior Expansion'
 local kPfx = '#'
 --array values are category/subcat,minitemid, and if 4th variable replace subcat
-local arrItemType = {'Tradeskill:Cloth:152576','Tradeskill:Herb:152505', 'Tradeskill:Food:152592','Tradeskill:Metal & Stone:152512','Tradeskill:Leather:152541','Tradeskill:Enchanting:152875','Tradeskill:Jewelcrafting:153700','Consumable:Potion:151609:Potions etc.','Consumable:Elixir:151609:Potions etc.', 'Consumable:Flask:151609:Potions etc.', 'Consumable:Food & Drink:151609', 'Item Enhancement:Weapon:151609:Item Enhancement'}
+local arrItemType = {'Tradeskill:Cloth:152576','Tradeskill:Herb:152505', 'Tradeskill:Food:152592','Tradeskill:Metal & Stone:152512','Tradeskill:Leather:152541','Tradeskill:Enchanting:152875','Tradeskill:Jewelcrafting:153700','Gem:Gem:153635','Consumable:Potion:151609:Potions etc.','Consumable:Elixir:151609:Potions etc.', 'Consumable:Flask:151609:Potions etc.', 'Consumable:Food & Drink:151609', 'Item Enhancement:Weapon:151609:Item Enhancement'}
 
 local tooltip
 local function create()
-  local tip, leftside = CreateFrame("GameTooltip"), {}
-  for i = 1,6 do
+  local tip, leftTip = CreateFrame("GameTooltip"), {}
+  for x = 1,6 do
     local L,R = tip:CreateFontString(), tip:CreateFontString()
     L:SetFontObject(GameFontNormal)
     R:SetFontObject(GameFontNormal)
     tip:AddFontStrings(L,R)
-    leftside[i] = L
+    leftTip[x] = L
   end
-  tip.leftside = leftside
+  tip.leftTip = leftTip
   return tip
 end
 
@@ -69,7 +69,7 @@ function setFilter:GetOptions()
       order = 65,
       args = {
         _desc = {
-          name = L['Select optional groupings for equippable items.'],
+          name = L['Select optional groupings for weapons and armor.'],
           type = 'description',
           order = 10,
         },
@@ -122,12 +122,12 @@ function setFilter:GetOptions()
           type = 'toggle',
           order = 40,
         },
-        -- enableToOpen = {
-        --   name = L['Group Unopened Loot.'],
-        --   desc = L['Check to group lockboxes, bonus caches and other loot containers. Yeah, it\'s not expansion related, but it\'s handy!'],
-        --   type = 'toggle',
-        --   order = 50,
-        -- },
+        enableToOpen = {
+          name = L['Group Unopened Loot.'],
+          desc = L['Check to group lockboxes, bonus caches and other loot containers. Yeah, it\'s not expansion related, but it\'s handy!'],
+          type = 'toggle',
+          order = 50,
+        },
       }
     },
   }, addon:GetOptionHandler(self, false, function() return self:Update() end)
@@ -160,6 +160,10 @@ function setFilter:Filter(slotData)
       if (itemType == currCategory) and (itemSubType == currSubCategory) and (slotData.itemId < tonumber(currMinItemID)) then
           return kPfx .. newSubCategory, kCategory
       end
+    elseif  ((self.db.profile.enableMats) and (currCategory=='Gem')) then
+      if (itemType == currCategory) and (slotData.itemId < tonumber(currMinItemID)) then
+        return kPfx .. newSubCategory, kCategory
+      end
     elseif (self.db.profile.enableConsumables) and ((currCategory=='Consumable') or (currCategory=='Item Enhancement')) then
       if (itemType == currCategory) and (itemSubType == currSubCategory) and (slotData.itemId < tonumber(currMinItemID)) then
           return kPfx .. newSubCategory, kCategory
@@ -168,38 +172,37 @@ function setFilter:Filter(slotData)
   end
   -- End for Category/Subcategory loop from Array
   -- start gear checks
-  if  ((itemType == 'Weapon') or (itemType == 'Armor')) then
-    if (itemRarity == 5) and (self.db.profile.enableLegendaries) then --legendaries
-      return  kPfx .. 'Legendary', kCategory
-    elseif (itemRarity == 6) and (self.db.profile.enableArtifacts)  then --Artifacts
-      return  kPfx .. 'Artifact', kCategory
-    -- Blizz's values for soulbound are funky, so have to force scan tooltip
-    else      
-      tooltip = tooltip or create()
-      tooltip:SetOwner(UIParent,"ANCHOR_NONE")
-      tooltip:ClearLines()
-    
-      if slotData.bag == BANK_CONTAINER then
-        tooltip:SetInventoryItem("player", BankButtonIDToInvSlotID(slotData.slot, nil))
-      else
-        tooltip:SetBagItem(slotData.bag, slotData.slot)
-      end
-      -- Loop through item tooltip to check if BoP or Boe
-      for i = 1,6 do
-        local t = tooltip.leftside[i]:GetText()
+  local isWeaponOrArmor = false
+  if (itemType == 'Weapon') or (itemType == 'Armor') then isWeaponOrArmor = true end
 
-        if self.db.profile.enableBoE and t == ITEM_BIND_ON_EQUIP and slotData.itemId < 154177 then
-          return  kPfx .. 'BoE', kCategory
-        elseif self.db.profile.enableBoP and (t == ITEM_SOULBOUND) and slotData.itemId < 154177 then
-          return  kPfx .. 'BoP', kCategory
-        -- move outside of armor/weapon if statement
-        -- elseif self.db.profile.enableToOpen and (t == ITEM_OPENABLE or t == LOCKED) then
-        --   return  'Open Me\!', 'New'
-       end
-      end
-      tooltip:Hide()
-
+  if (itemRarity == 5) and (self.db.profile.enableLegendaries) and (isWeaponOrArmor == true ) then --legendaries
+    return  kPfx .. 'Legendary', kCategory
+  elseif (itemRarity == 6) and (self.db.profile.enableArtifacts) and (isWeaponOrArmor == true )  then --Artifacts
+    return  kPfx .. 'Artifact', kCategory
+  -- Blizz's values for soulbound are funky, so have to force scan tooltip
+  else      
+    tooltip = tooltip or create()
+    tooltip:SetOwner(UIParent,"ANCHOR_NONE")
+    tooltip:ClearLines()
+  
+    if slotData.bag == BANK_CONTAINER then
+      tooltip:SetInventoryItem("player", BankButtonIDToInvSlotID(slotData.slot, nil))
+    else
+      tooltip:SetBagItem(slotData.bag, slotData.slot)
     end
-  else  
+    -- Loop through item tooltip to check if BoP, Boe, or Unopened
+    -- TO ADD: item level difference check
+    for x = 1,6 do
+      local t = tooltip.leftTip[x]:GetText()
+
+      if self.db.profile.enableBoE and t == ITEM_BIND_ON_EQUIP and slotData.itemId < 154177  and (isWeaponOrArmor == true )then
+        return  kPfx .. 'BoE', kCategory
+      elseif self.db.profile.enableBoP and (t == ITEM_SOULBOUND) and slotData.itemId < 154177  and (isWeaponOrArmor == true )then
+        return  kPfx .. 'BoP', kCategory
+      elseif self.db.profile.enableToOpen and (t == ITEM_OPENABLE or t == LOCKED or t == '<Right Click to Open>') and (itemType == 'Miscellaneous') then
+        return  'Open Me!', 'New'
+      end
+    end
+    tooltip:Hide()
   end
 end

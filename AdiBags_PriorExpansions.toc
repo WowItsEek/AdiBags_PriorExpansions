@@ -6,8 +6,8 @@
 ## Title: AdiBags - Prior Expansions
 ## Notes: Adds filters to AdiBags to group items from prior expansions
 ## Author: Eek - Earthen Ring
-## Version: 0.1
-## X-Date: 2019-04-21
+## Version: 1.00
+## X-Date: 2019-04-25
 ## X-License: GPL v3
 ## X-Category: Bags & Inventory
 ## Dependencies: AdiBags
