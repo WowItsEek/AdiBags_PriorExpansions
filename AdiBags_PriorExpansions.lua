@@ -1,5 +1,5 @@
 --[[
-AdiBags_ExpansionGroups - Adds grouping by Expansion ID to Adirelle's fantastic bag addon AdiBags.
+AdiBags_PriorExpansions - Seperates items from current expansion from those from prior ones, an addition to Adirelle's fantastic bag addon AdiBags.
 Copyright 2019 Ggreg Taylor
 All rights reserved.
 --]]
@@ -7,8 +7,7 @@ All rights reserved.
 local addon = LibStub('AceAddon-3.0'):GetAddon('AdiBags')
 local L = setmetatable({}, {__index = addon.L})
 
-local kMinWeapon = 124525
-local kMinArmor = 154177
+local currMinLevel = 201
 local kCategory = 'Prior Expansion'
 local kPfx = '#'
 --array values are category/subcat,minitemid, and if 4th variable replace subcat
@@ -133,12 +132,16 @@ function setFilter:GetOptions()
   }, addon:GetOptionHandler(self, false, function() return self:Update() end)
 end
 
-function setFilter:Filter(slotData)
-  local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount,  itemEquipLoc, itemIcon, itemSellPrice, _, _, bindType, expacID = GetItemInfo(slotData.itemId)
 
+function setFilter:Filter(slotData)
   if (self.db.profile.enable == false) or (slotData.itemId == false) then 
     return
   end
+  
+  local item = Item:CreateFromBagAndSlot(slotData.bag, slotData.slot)
+  local level = item and item:GetCurrentItemLevel() or 0
+  local itemName, itemLink, itemRarity, _,_, itemType, itemSubType, _,_,_,_,_,_, bindType, expacID = GetItemInfo(slotData.itemId)
+
   -- load array category/subcat values
   for x = 1, #arrItemType do
     local currSubset = {}
@@ -157,16 +160,24 @@ function setFilter:Filter(slotData)
       newSubCategory = currSubCategory
     end
     if ((self.db.profile.enableMats) and (currCategory=='Tradeskill')) then
-      if (itemType == currCategory) and (itemSubType == currSubCategory) and (slotData.itemId < tonumber(currMinItemID)) then
-          return kPfx .. newSubCategory, kCategory
+      if (itemType == currCategory) 
+          and (itemSubType == currSubCategory) 
+          and (slotData.itemId < tonumber(currMinItemID)) 
+      then
+          return kPfx .. newSubCategory, currCategory
       end
     elseif  ((self.db.profile.enableMats) and (currCategory=='Gem')) then
-      if (itemType == currCategory) and (slotData.itemId < tonumber(currMinItemID)) then
-        return kPfx .. newSubCategory, kCategory
+      if (itemType == currCategory) 
+          and (slotData.itemId < tonumber(currMinItemID)) 
+      then
+          return kPfx .. newSubCategory, currCategory
       end
     elseif (self.db.profile.enableConsumables) and ((currCategory=='Consumable') or (currCategory=='Item Enhancement')) then
-      if (itemType == currCategory) and (itemSubType == currSubCategory) and (slotData.itemId < tonumber(currMinItemID)) then
-          return kPfx .. newSubCategory, kCategory
+      if (itemType == currCategory) 
+          and (itemSubType == currSubCategory) 
+          and (slotData.itemId < tonumber(currMinItemID))
+      then
+          return kPfx .. newSubCategory, currCategory
       end
     end
   end
@@ -175,10 +186,10 @@ function setFilter:Filter(slotData)
   local isWeaponOrArmor = false
   if (itemType == 'Weapon') or (itemType == 'Armor') then isWeaponOrArmor = true end
 
-  if (itemRarity == 5) and (self.db.profile.enableLegendaries) and (isWeaponOrArmor == true ) then --legendaries
-    return  kPfx .. 'Legendary', kCategory
-  elseif (itemRarity == 6) and (self.db.profile.enableArtifacts) and (isWeaponOrArmor == true )  then --Artifacts
-    return  kPfx .. 'Artifact', kCategory
+  if (self.db.profile.enableLegendaries) and (itemRarity == 5) and (isWeaponOrArmor == true ) then --legendaries
+    return  kPfx .. 'Legendary', currCategory
+  elseif (self.db.profile.enableArtifacts) and (itemRarity == 6) and (isWeaponOrArmor == true )  then --Artifacts
+    return  kPfx .. 'Artifact', currCategory
   -- Blizz's values for soulbound are funky, so have to force scan tooltip
   else      
     tooltip = tooltip or create()
@@ -194,15 +205,17 @@ function setFilter:Filter(slotData)
     -- TO ADD: item level difference check
     for x = 1,6 do
       local t = tooltip.leftTip[x]:GetText()
-
-      if self.db.profile.enableBoE and t == ITEM_BIND_ON_EQUIP and slotData.itemId < 154177  and (isWeaponOrArmor == true )then
-        return  kPfx .. 'BoE', kCategory
-      elseif self.db.profile.enableBoP and (t == ITEM_SOULBOUND) and slotData.itemId < 154177  and (isWeaponOrArmor == true )then
-        return  kPfx .. 'BoP', kCategory
-      elseif self.db.profile.enableToOpen and (t == ITEM_OPENABLE or t == LOCKED or t == '<Right Click to Open>') and (itemType == 'Miscellaneous') then
+      if self.db.profile.enableBoE and t == ITEM_BIND_ON_EQUIP and level < currMinLevel  and (isWeaponOrArmor == true )then
+        return  kPfx .. 'BoE', currCategory
+      elseif self.db.profile.enableBoP and (t == ITEM_SOULBOUND) and level < currMinLevel  and (isWeaponOrArmor == true )then
+        return  kPfx .. 'BoP', currCategory
+      elseif self.db.profile.enableToOpen and (t == ITEM_OPENABLE or t == LOCKED or t == '<Right Click to Open>') 
+      then
         return  'Open Me!', 'New'
       end
     end
     tooltip:Hide()
   end
 end
+
+

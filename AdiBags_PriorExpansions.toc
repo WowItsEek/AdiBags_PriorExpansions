@@ -1,12 +1,12 @@
-# AdiBags - Previous Expansions
+# AdiBags - Prior Expansions
 # Copyright 2019 Eek! (wowitseek@gmail.com)
 # All rights reserved.
 
 ## Interface: 80100
 ## Title: AdiBags - Prior Expansions
-## Notes: Adds filters to AdiBags to group items from prior expansions
+## Notes: Adds filters to AdiBags to seperate current items from items from older expansions
 ## Author: Eek - Earthen Ring
-## Version: 1.00
+## Version: 1.02
 ## X-Date: 2019-04-25
 ## X-License: GPL v3
 ## X-Category: Bags & Inventory
