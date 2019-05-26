@@ -4,9 +4,9 @@
 
 ## Interface: 80100
 ## Title: AdiBags - Prior Expansions
-## Notes: Adds filters to AdiBags to seperate current items from items from older expansions
+## Notes: Adds filters to AdiBags seperating current items from those from older expansions
 ## Author: Eek - Earthen Ring
-## Version: 1.02
+## Version: 1.03
 ## X-Date: 2019-04-25
 ## X-License: GPL v3
 ## X-Category: Bags & Inventory

@@ -9,7 +9,8 @@ local L = setmetatable({}, {__index = addon.L})
 
 local currMinLevel = 201
 local kCategory = 'Prior Expansion'
-local kPfx = '#'
+local kPfx = '|cff00ffff' 
+local kSfx = '|r'
 --array values are category/subcat,minitemid, and if 4th variable replace subcat
 local arrItemType = {'Tradeskill:Cloth:152576','Tradeskill:Herb:152505', 'Tradeskill:Food:152592','Tradeskill:Metal & Stone:152512','Tradeskill:Leather:152541','Tradeskill:Enchanting:152875','Tradeskill:Jewelcrafting:153700','Gem:Gem:153635','Consumable:Potion:151609:Potions etc.','Consumable:Elixir:151609:Potions etc.', 'Consumable:Flask:151609:Potions etc.', 'Consumable:Food & Drink:151609', 'Item Enhancement:Weapon:151609:Item Enhancement'}
 
@@ -164,20 +165,20 @@ function setFilter:Filter(slotData)
           and (itemSubType == currSubCategory) 
           and (slotData.itemId < tonumber(currMinItemID)) 
       then
-          return kPfx .. newSubCategory, currCategory
+          return kPfx .. newSubCategory .. kSfx, currCategory
       end
     elseif  ((self.db.profile.enableMats) and (currCategory=='Gem')) then
       if (itemType == currCategory) 
           and (slotData.itemId < tonumber(currMinItemID)) 
       then
-          return kPfx .. newSubCategory, currCategory
+          return kPfx .. newSubCategory.. kSfx, currCategory
       end
     elseif (self.db.profile.enableConsumables) and ((currCategory=='Consumable') or (currCategory=='Item Enhancement')) then
       if (itemType == currCategory) 
           and (itemSubType == currSubCategory) 
           and (slotData.itemId < tonumber(currMinItemID))
       then
-          return kPfx .. newSubCategory, currCategory
+          return kPfx .. newSubCategory.. kSfx, currCategory
       end
     end
   end
@@ -187,9 +188,9 @@ function setFilter:Filter(slotData)
   if (itemType == 'Weapon') or (itemType == 'Armor') then isWeaponOrArmor = true end
 
   if (self.db.profile.enableLegendaries) and (itemRarity == 5) and (isWeaponOrArmor == true ) then --legendaries
-    return  kPfx .. 'Legendary', currCategory
+    return  kPfx .. 'Legendary'.. kSfx, currCategory
   elseif (self.db.profile.enableArtifacts) and (itemRarity == 6) and (isWeaponOrArmor == true )  then --Artifacts
-    return  kPfx .. 'Artifact', currCategory
+    return  kPfx .. 'Artifact'.. kSfx, currCategory
   -- Blizz's values for soulbound are funky, so have to force scan tooltip
   else      
     tooltip = tooltip or create()
@@ -206,12 +207,12 @@ function setFilter:Filter(slotData)
     for x = 1,6 do
       local t = tooltip.leftTip[x]:GetText()
       if self.db.profile.enableBoE and t == ITEM_BIND_ON_EQUIP and level < currMinLevel  and (isWeaponOrArmor == true )then
-        return  kPfx .. 'BoE', currCategory
+        return  kPfx .. 'BoE'.. kSfx, currCategory
       elseif self.db.profile.enableBoP and (t == ITEM_SOULBOUND) and level < currMinLevel  and (isWeaponOrArmor == true )then
-        return  kPfx .. 'BoP', currCategory
+        return  kPfx .. 'BoP'.. kSfx, currCategory
       elseif self.db.profile.enableToOpen and (t == ITEM_OPENABLE or t == LOCKED or t == '<Right Click to Open>') 
       then
-        return  'Open Me!', 'New'
+        return  'Open Me!'.. kSfx, 'New'
       end
     end
     tooltip:Hide()

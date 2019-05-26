@@ -3,3 +3,4 @@
 04.25.19    v 1.0 Added group for items to be opened such as emissary bonuses or lockboxes
 04.26.19    v 1.01 Fixed Category labels
 05.04.19    v 1.02 Fixed BoE/BoP ilevel check
+05.26.19    v 1.03 Added colors to Category labels
