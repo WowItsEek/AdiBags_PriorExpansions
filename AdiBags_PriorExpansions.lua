@@ -212,7 +212,7 @@ function setFilter:Filter(slotData)
         return  kPfx .. 'BoP'.. kSfx, currCategory
       elseif self.db.profile.enableToOpen and (t == ITEM_OPENABLE or t == LOCKED or t == '<Right Click to Open>') 
       then
-        return  'Open Me!'.. kSfx, 'New'
+        return  kPfx ..'Open Me!'.. kSfx, 'New'
       end
     end
     tooltip:Hide()
