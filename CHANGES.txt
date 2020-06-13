@@ -1,6 +1,12 @@
-04.23.19    v 0.2 Completed first pass at BoP/BoE toggle
-04.24.19    v 0.21 Added prior expansion crafted gem filter
-04.25.19    v 1.0 Added group for items to be opened such as emissary bonuses or lockboxes
-04.26.19    v 1.01 Fixed Category labels
-05.04.19    v 1.02 Fixed BoE/BoP ilevel check
-05.26.19    v 1.03 Added colors to Category labels
+04.23.19    v 0.2    Completed first pass at BoP/BoE toggle
+04.24.19    v 0.21   Added prior expansion crafted gem filter
+04.25.19    v 1.0    Added group for items to be opened such as emissary bonuses or lockboxes
+04.26.19    v 1.01   Fixed Category labels
+05.04.19    v 1.02   Fixed BoE/BoP ilevel check
+05.26.19    v 1.03   Added colors to Category labels
+06.25.19    v 1.04   Added seperate catetory for mounts
+09.28.19    v 1.05   Included elemental and cooking mats in prior expansions filter
+05.30.20    v 1.06   Fixed memory bloat from tooltips
+06.01.20    v 1.07   Cleaned up constants
+06.09.20    v 1.08   More code cleanup
+06.12.20    v 1.1.0  Major code rewrite: removed string parsed arrays, replaced with name/value pairs with nested arrays. Changed strings to constants for translation as much as possible. Added pet battle, and cosmetic gear groups. Added '#' prefix to group labels for prior expansion items. Added ability to toggle color for consumable and tradegood labels.

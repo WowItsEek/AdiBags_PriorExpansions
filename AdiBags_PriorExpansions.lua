@@ -6,58 +6,98 @@ All rights reserved.
 
 local addon = LibStub('AceAddon-3.0'):GetAddon('AdiBags')
 local L = setmetatable({}, {__index = addon.L})
+local setFilter = addon:RegisterFilter("PriorExpansion", 93, 'ABEvent-1.0')
+setFilter.uiName = L['Prior Expansion Groups']
+setFilter.uiDesc = L['Group previous expansion items together.']
 
 local currMinLevel = 201
 local kCategory = 'Prior Expansion'
 local kPfx = '|cff00ffff' 
+local kPfxColor2 = '|cff4bf442' 
 local kSfx = '|r'
---array values are category/subcat,minitemid, and if 4th variable replace subcat
-local arrItemType = {'Tradeskill:Cloth:152576','Tradeskill:Herb:152505', 'Tradeskill:Food:152592','Tradeskill:Metal & Stone:152512','Tradeskill:Leather:152541','Tradeskill:Enchanting:152875','Tradeskill:Jewelcrafting:153700','Gem:Gem:153635','Consumable:Potion:151609:Potions etc.','Consumable:Elixir:151609:Potions etc.', 'Consumable:Flask:151609:Potions etc.', 'Consumable:Food & Drink:151609', 'Item Enhancement:Weapon:151609:Item Enhancement'}
+local kPfxTradegoods = ''
+local Ggbug = false
+local debugBagSlot = {1,8}
+local lookForId = 133576
+local bagItemID
+local PRIORITY_ITEM = 'Attention!'
+addon:SetCategoryOrder(PRIORITY_ITEM, 81)
 
-local tooltip
+local maxExpansionIDs = {
+  [1] = { classID=2, subClassID=-1, expLegion=163873, expBfA=0 },  -- Weapons, 
+  [2] = { classID=4, subClassID=-1, expLegion=152118, expBfA=0 },  -- Armor, 
+  [3] = { classID=0, subClassID=1, expLegion=152494, expBfA=0 },  -- Consumables, Potion
+  [4] = { classID=0, subClassID=2, expLegion=151609, expBfA=0 },  -- Consumables, Elixir
+  [5] = { classID=0, subClassID=3, expLegion=152638, expBfA=0 },  -- Consumables, Flask
+  [6] = { classID=0, subClassID=5, expLegion=152592, expBfA=0 },  -- Consumables, Food
+  [7] = { classID=7, subClassID=9, expLegion=152505, expBfA=0 },  -- Trade Goods, Herb
+  [8] = { classID=7, subClassID=7, expLegion=152512, expBfA=0 },  -- Trade Goods, Metal & Stone
+  [9] = { classID=7, subClassID=8, expLegion=152543, expBfA=0 },  -- Trade Goods, Cooking
+  [10] = { classID=7, subClassID=5, expLegion=152576, expBfA=0 },  -- Trade Goods, Cloth
+  [11] = { classID=7, subClassID=6, expLegion=152541, expBfA=0 },  -- Trade Goods, Leather
+  [12] = { classID=7, subClassID=12, expLegion=152875, expBfA=0 },  -- Trade Goods, Enchanting
+  [13] = { classID=7, subClassID=4, expLegion=153700, expBfA=0 },  -- Trade Goods, Jewelcrafting
+  [14] = { classID=7, subClassID=-1, expLegion=153700, expBfA=0 },  -- Trade Goods, 
+  [15] = { classID=8, subClassID=-1, expLegion=153700, expBfA=0 },  -- Item Enhancement, 
+  }
+function Ggprint(...) 
+  if lookForId == bagItemID and Ggbug == true then print(...) end
+end
+
 local function create()
-  local tip, leftTip = CreateFrame("GameTooltip"), {}
+  local tip, leftTip, rightTip = CreateFrame("GameTooltip"), {}, {}
   for x = 1,6 do
     local L,R = tip:CreateFontString(), tip:CreateFontString()
     L:SetFontObject(GameFontNormal)
     R:SetFontObject(GameFontNormal)
     tip:AddFontStrings(L,R)
     leftTip[x] = L
+    rightTip[x] = R
   end
   tip.leftTip = leftTip
+  tip.rightTip = rightTip
   return tip
 end
+local tooltip = tooltip or create()
 
-local setFilter = addon:RegisterFilter("PriorExpansion", 47, 'ABEvent-1.0')
-setFilter.uiName = L['Prior Expansion Groups']
-setFilter.uiDesc = L['Group previous expansion items together.']
+
+
 
 function setFilter:OnInitialize()
   self.db = addon.db:RegisterNamespace('PriorExpansion', {
-    profile = { enable = true },
+    profile = { enable = true ,
+    enableMats = true,
+    enableBoE = true,
+    enableBoP = true,
+    enableLegendaries = true,
+    enableArtifacts = true,
+    enableMats = true,
+    enableConsumables = true,
+    enableToOpen = true,
+    enableMounts = true,
+    enableCosmetic = false,
+    enablePetGear = false,
+    enableColoredLabels = true,
+  },
     char = {  },
   })
 end
-
 function setFilter:Update()
   self:SendMessage('AdiBags_FiltersChanged')
 end
-
 function setFilter:OnEnable()
   addon:UpdateFilters()
 end
-
 function setFilter:OnDisable()
   addon:UpdateFilters()
 end
 
-local setNames = {}
 
 function setFilter:GetOptions()
   return {
     enable = {
       name = L['Enable prior expansion groups'],
-      desc = L['Check this if you want to group by prior expansion. Prior expansion group bag labels are prefixed with #.'],
+      desc = L['Check this if you want to group by prior expansion. Prior expansion group bag labels are light blue.'],
       width = 'double',
       type = 'toggle',
       order = 25,
@@ -80,20 +120,26 @@ function setFilter:GetOptions()
           order = 20,
         },
         enableBoP = {
-          name = L['Soulbound Gear'],
+          name = ITEM_SOULBOUND,
           desc = L['Check to group Soulbound armor and weapons from prior expansions.'],
           type = 'toggle',
           order = 30,
         },
         enableLegendaries = {
-          name = L['Group Legendaries'],
+          name = ITEM_QUALITY5_DESC,
           desc = L['Check to group Legendaries from prior expansions.'],
           type = 'toggle',
           order = 33,
         },
         enableArtifacts = {
-          name = L['Group Artifacts'],
+          name = ITEM_QUALITY6_DESC,
           desc = L['Check to group Artifacts from prior expansions.'],
+          type = 'toggle',
+          order = 40,
+        },
+        enableCosmetic = {
+          name = L['Cosmetic'],
+          desc = L['Check to group cosmetic items like tabards and costumes.'],
           type = 'toggle',
           order = 40,
         },
@@ -111,7 +157,7 @@ function setFilter:GetOptions()
           order = 10,
         },
         enableMats = {
-          name = L['Trade Goods'],
+          name = BAG_FILTER_TRADE_GOODS,
           desc = L['Check to group Trade Goods by category (Herbs, Leather, etc.) from prior expansions.'],
           type = 'toggle',
           order = 33,
@@ -121,102 +167,134 @@ function setFilter:GetOptions()
           desc = L['Check to group Food, Drink, Potions, Elixirs and Flasks from prior expansions.'],
           type = 'toggle',
           order = 40,
+          
         },
+        enablePetGear = {
+          name = L['Battle Pet Items'],
+          desc = L['Check to group battle pet items.'],
+          type = 'toggle',
+          order = 45,
+          
+        },
+        
         enableToOpen = {
-          name = L['Group Unopened Loot.'],
+          name = L['Group Unopened Loot'],
           desc = L['Check to group lockboxes, bonus caches and other loot containers. Yeah, it\'s not expansion related, but it\'s handy!'],
           type = 'toggle',
           order = 50,
         },
+        enableMounts = {
+          name = L['Separate Mount Drops'],
+          desc = L['Check to group Mounts reins so you don\'t space if one dropped and keep grinding needlessly.'],
+          type = 'toggle',
+          order = 60,
+        },
       }
+    },
+    priorExpansionOtherSettings = {
+      name = L['Other Settings'],
+      type = L['group'],
+      inline = true,
+      order = 70,
+      args = {
+        _desc = {
+          name = L['Other Prior Expansion filter settings.'],
+          type = 'description',
+          order = 10,
+        },
+        enableColoredLabels = {
+          name = kPfx .. L['Colored Labels'] .. kSfx,
+          desc = L['Check to use colored labels for prior expansion tradegoods and consumables.'],
+          type = 'toggle',
+          order = 33,
+        },
+      }
+
     },
   }, addon:GetOptionHandler(self, false, function() return self:Update() end)
 end
 
-
-function setFilter:Filter(slotData)
-  if (self.db.profile.enable == false) or (slotData.itemId == false) then 
-    return
-  end
-  
-  local item = Item:CreateFromBagAndSlot(slotData.bag, slotData.slot)
-  local level = item and item:GetCurrentItemLevel() or 0
-  local itemName, itemLink, itemRarity, _,_, itemType, itemSubType, _,_,_,_,_,_, bindType, expacID = GetItemInfo(slotData.itemId)
-
-  -- load array category/subcat values
-  for x = 1, #arrItemType do
-    local currSubset = {}
-    local currItemType = arrItemType[x] .. ':'
-    local index = 1
-    for w in currItemType:gmatch('([^:]+)') do 
-      currSubset[index]  = w 
-      index = index +1
-    end
-    currCategory = currSubset[1]
-    currSubCategory = currSubset[2]
-    currMinItemID = currSubset[3]
-    if (currSubset[4]) then
-      newSubCategory = currSubset[4]
-    else
-      newSubCategory = currSubCategory
-    end
-    if ((self.db.profile.enableMats) and (currCategory=='Tradeskill')) then
-      if (itemType == currCategory) 
-          and (itemSubType == currSubCategory) 
-          and (slotData.itemId < tonumber(currMinItemID)) 
-      then
-          return kPfx .. newSubCategory .. kSfx, currCategory
-      end
-    elseif  ((self.db.profile.enableMats) and (currCategory=='Gem')) then
-      if (itemType == currCategory) 
-          and (slotData.itemId < tonumber(currMinItemID)) 
-      then
-          return kPfx .. newSubCategory.. kSfx, currCategory
-      end
-    elseif (self.db.profile.enableConsumables) and ((currCategory=='Consumable') or (currCategory=='Item Enhancement')) then
-      if (itemType == currCategory) 
-          and (itemSubType == currSubCategory) 
-          and (slotData.itemId < tonumber(currMinItemID))
-      then
-          return kPfx .. newSubCategory.. kSfx, currCategory
+local function isFromPriorExpansion(itemClassID, itemSubClassID, itemId)
+  -- compare to maxExpansionIDs array, if itemId less than expLegion # then return true, is prior
+  for k, v in pairs(maxExpansionIDs) do
+    if v.classID == itemClassID and v.subClassID == itemSubClassID then
+      if itemId < v.expLegion then
+        return true
+      else
+        return false
       end
     end
   end
-  -- End for Category/Subcategory loop from Array
-  -- start gear checks
-  local isWeaponOrArmor = false
-  if (itemType == 'Weapon') or (itemType == 'Armor') then isWeaponOrArmor = true end
-
-  if (self.db.profile.enableLegendaries) and (itemRarity == 5) and (isWeaponOrArmor == true ) then --legendaries
-    return  kPfx .. 'Legendary'.. kSfx, currCategory
-  elseif (self.db.profile.enableArtifacts) and (itemRarity == 6) and (isWeaponOrArmor == true )  then --Artifacts
-    return  kPfx .. 'Artifact'.. kSfx, currCategory
-  -- Blizz's values for soulbound are funky, so have to force scan tooltip
-  else      
-    tooltip = tooltip or create()
-    tooltip:SetOwner(UIParent,"ANCHOR_NONE")
-    tooltip:ClearLines()
-  
-    if slotData.bag == BANK_CONTAINER then
-      tooltip:SetInventoryItem("player", BankButtonIDToInvSlotID(slotData.slot, nil))
-    else
-      tooltip:SetBagItem(slotData.bag, slotData.slot)
-    end
-    -- Loop through item tooltip to check if BoP, Boe, or Unopened
-    -- TO ADD: item level difference check
-    for x = 1,6 do
-      local t = tooltip.leftTip[x]:GetText()
-      if self.db.profile.enableBoE and t == ITEM_BIND_ON_EQUIP and level < currMinLevel  and (isWeaponOrArmor == true )then
-        return  kPfx .. 'BoE'.. kSfx, currCategory
-      elseif self.db.profile.enableBoP and (t == ITEM_SOULBOUND) and level < currMinLevel  and (isWeaponOrArmor == true )then
-        return  kPfx .. 'BoP'.. kSfx, currCategory
-      elseif self.db.profile.enableToOpen and (t == ITEM_OPENABLE or t == LOCKED or t == '<Right Click to Open>') 
-      then
-        return  kPfx ..'Open Me!'.. kSfx, 'New'
+    -- else catch all for parts, elemental, other categories, subClassID -1 indicates check for all other subclasses
+  for k, v in pairs(maxExpansionIDs) do
+    if v.classID == itemClassID and v.subClassID == -1 then
+      if itemId < v.expLegion then
+        return true
+      else
+        return false
       end
     end
-    tooltip:Hide()
   end
+  return false
 end
 
+function setFilter:Filter(slotData)
+  if (self.db.profile.enable == false) or (slotData.itemId == false) then return end
+  if self.db.profile.enableColoredLabels == true then kPfxTradegoods = kPfx else kPfxTradegoods = '' end
 
+  local itemLink = GetContainerItemLink(slotData.bag, slotData.slot)
+  local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID, bindType, expacID, _, isCraftingReagent = GetItemInfo(itemLink)
+  local isWeaponOrArmor = false
+  if itemClassID == LE_ITEM_CLASS_WEAPON or itemClassID == LE_ITEM_CLASS_ARMOR then isWeaponOrArmor = true end
+  bagItemID = slotData.itemId
+  if not itemMinLevel then itemMinLevel = 0 end
+
+  if self.db.profile.enableMounts and itemType == MISCELLANEOUS and itemSubType == MOUNT  then return  kPfxColor2 ..'EEK!'.. kSfx, PRIORITY_ITEM end
+  if self.db.profile.enableLegendaries and itemRarity == 5 and isWeaponOrArmor then  return  kPfx .. ITEM_QUALITY5_DESC.. kSfx, kCategory end --legendaries
+  if self.db.profile.enableArtifacts and itemRarity == 6 and isWeaponOrArmor  then  return  kPfx .. ITEM_QUALITY6_DESC.. kSfx, kCategory end --Artifacts
+  if self.db.profile.enableMats and itemClassID == LE_ITEM_CLASS_TRADEGOODS and itemSubClassID ~= 16 then -- Don't group old inscription stuff
+    if isFromPriorExpansion(itemClassID, itemSubClassID, bagItemID) then return kPfxTradegoods .. '#' .. itemSubType .. kSfx, kCategory end
+  end
+  if self.db.profile.enableCosmetic and isWeaponOrArmor == true and itemSubClassID == LE_ITEM_ARMOR_COSMETIC then return  'Cosmetic', 'Equipment' end
+
+  --- Groups that require scanning tooltip
+  tooltip:SetOwner(UIParent,"ANCHOR_NONE")
+  tooltip:ClearLines()
+  if slotData.bag == BANK_CONTAINER then
+    tooltip:SetInventoryItem("player", BankButtonIDToInvSlotID(slotData.slot, nil))
+  else
+    tooltip:SetBagItem(slotData.bag, slotData.slot)
+  end
+  tipData = {}
+  for x = 1,6 do tipData[x] = {tooltip.leftTip[x]:GetText(), tooltip.rightTip[x]:GetText()} end
+  tooltip:Hide()
+  tooltip:SetParent(nil)
+  -- Pet battle items
+  if self.db.profile.enablePetGear and (tipData[2][1] == ITEM_ACCOUNTBOUND or tipData[2][1] == ITEM_BNETACCOUNTBOUND) then
+    for x = 1, 6 do
+      local bPet = string.find(strupper(tipData[x][1]), 'PET BATTLE') or -1
+      local pBattle = string.find(strupper(tipData[x][1]), 'BATTLE PET')  or -1
+      if (bpet and bPet > 0) or (pBattle and pBattle > 0) then return  'Pet Battle', MISCELLANEOUS end  
+    end
+  end  
+  -- Filter consumables, put down here because it conflicts with pet items
+  if self.db.profile.enableConsumables and (itemClassID==LE_ITEM_CLASS_CONSUMABLE or itemClassID ==LE_ITEM_CLASS_ITEM_ENHANCEMENT) then
+    if  isFromPriorExpansion(itemClassID, itemSubClassID, bagItemID) then  return kPfxTradegoods .. '#' .. itemType ..kSfx, kCategory  end 
+  end
+
+  for x = 1,6 do
+    -- Filter Old BoE Gear
+    if self.db.profile.enableBoE and tipData[x][1] == ITEM_BIND_ON_EQUIP and itemLevel < currMinLevel  and isWeaponOrArmor == true then
+      return  kPfx .. '#' .. ITEM_BIND_ON_EQUIP .. kSfx, 'Old BoE Gear'
+    end
+    -- Filter Old BoP Gear
+    if self.db.profile.enableBoP and tipData[x][1] == ITEM_SOULBOUND and  isWeaponOrArmor == true and itemLevel < currMinLevel then
+      return  kPfx .. '#'.. ITEM_SOULBOUND.. kSfx, 'Old BoP Gear'
+    end
+    -- Filter Lockboxes
+    if self.db.profile.enableToOpen and (tipData[x][1] == ITEM_OPENABLE or tipData[x][1] == LOCKED) then
+      return  kPfx ..'Open Me!'.. kSfx, NEW
+    end
+  end
+
+end
