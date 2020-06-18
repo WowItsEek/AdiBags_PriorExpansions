@@ -3,44 +3,28 @@ AdiBags_PriorExpansions - Seperates items from current expansion from those from
 Copyright 2019 Ggreg Taylor
 All rights reserved.
 --]]
+local addonName, addon = ...
+local AdiBags = LibStub("AceAddon-3.0"):GetAddon("AdiBags")
 
-local addon = LibStub('AceAddon-3.0'):GetAddon('AdiBags')
 local L = setmetatable({}, {__index = addon.L})
-local setFilter = addon:RegisterFilter("PriorExpansion", 93, 'ABEvent-1.0')
+local setFilter = AdiBags:RegisterFilter("PriorExpansion", 93, 'ABEvent-1.0')
 setFilter.uiName = L['Prior Expansion Groups']
 setFilter.uiDesc = L['Group previous expansion items together.']
 
 local currMinLevel = 201
-local kCategory = 'Prior Expansion'
+local kCategory = L['Prior Expansion']
 local kPfx = '|cff00ffff' 
 local kPfxColor2 = '|cff4bf442' 
 local kSfx = '|r'
 local kPfxTradegoods = ''
 local Ggbug = false
 local debugBagSlot = {1,8}
-local lookForId = 133576
+local lookForId = 86143
 local bagItemID
-local PRIORITY_ITEM = 'Attention!'
-addon:SetCategoryOrder(PRIORITY_ITEM, 81)
+local PRIORITY_ITEM = L['Attention!']
+AdiBags:SetCategoryOrder(PRIORITY_ITEM, 81)
 
-local maxExpansionIDs = {
-  [1] = { classID=2, subClassID=-1, expLegion=163873, expBfA=0 },  -- Weapons, 
-  [2] = { classID=4, subClassID=-1, expLegion=152118, expBfA=0 },  -- Armor, 
-  [3] = { classID=0, subClassID=1, expLegion=152494, expBfA=0 },  -- Consumables, Potion
-  [4] = { classID=0, subClassID=2, expLegion=151609, expBfA=0 },  -- Consumables, Elixir
-  [5] = { classID=0, subClassID=3, expLegion=152638, expBfA=0 },  -- Consumables, Flask
-  [6] = { classID=0, subClassID=5, expLegion=152592, expBfA=0 },  -- Consumables, Food
-  [7] = { classID=7, subClassID=9, expLegion=152505, expBfA=0 },  -- Trade Goods, Herb
-  [8] = { classID=7, subClassID=7, expLegion=152512, expBfA=0 },  -- Trade Goods, Metal & Stone
-  [9] = { classID=7, subClassID=8, expLegion=152543, expBfA=0 },  -- Trade Goods, Cooking
-  [10] = { classID=7, subClassID=5, expLegion=152576, expBfA=0 },  -- Trade Goods, Cloth
-  [11] = { classID=7, subClassID=6, expLegion=152541, expBfA=0 },  -- Trade Goods, Leather
-  [12] = { classID=7, subClassID=12, expLegion=152875, expBfA=0 },  -- Trade Goods, Enchanting
-  [13] = { classID=7, subClassID=4, expLegion=153700, expBfA=0 },  -- Trade Goods, Jewelcrafting
-  [14] = { classID=7, subClassID=-1, expLegion=153700, expBfA=0 },  -- Trade Goods, 
-  [15] = { classID=8, subClassID=-1, expLegion=153700, expBfA=0 },  -- Item Enhancement, 
-  }
-function Ggprint(...) 
+local function Ggprint(...) 
   if lookForId == bagItemID and Ggbug == true then print(...) end
 end
 
@@ -61,10 +45,8 @@ end
 local tooltip = tooltip or create()
 
 
-
-
 function setFilter:OnInitialize()
-  self.db = addon.db:RegisterNamespace('PriorExpansion', {
+  self.db = AdiBags.db:RegisterNamespace('PriorExpansion', {
     profile = { enable = true ,
     enableMats = true,
     enableBoE = true,
@@ -86,13 +68,11 @@ function setFilter:Update()
   self:SendMessage('AdiBags_FiltersChanged')
 end
 function setFilter:OnEnable()
-  addon:UpdateFilters()
+  AdiBags:UpdateFilters()
 end
 function setFilter:OnDisable()
-  addon:UpdateFilters()
+  AdiBags:UpdateFilters()
 end
-
-
 function setFilter:GetOptions()
   return {
     enable = {
@@ -134,6 +114,12 @@ function setFilter:GetOptions()
         enableArtifacts = {
           name = ITEM_QUALITY6_DESC,
           desc = L['Check to group Artifacts from prior expansions.'],
+          type = 'toggle',
+          order = 40,
+        },
+        enableHeirlooms = {
+          name = ITEM_QUALITY7_DESC,
+          desc = L['Check to group Heirloom items.'],
           type = 'toggle',
           order = 40,
         },
@@ -211,12 +197,12 @@ function setFilter:GetOptions()
       }
 
     },
-  }, addon:GetOptionHandler(self, false, function() return self:Update() end)
+  }, AdiBags:GetOptionHandler(self, false, function() return self:Update() end)
 end
 
 local function isFromPriorExpansion(itemClassID, itemSubClassID, itemId)
-  -- compare to maxExpansionIDs array, if itemId less than expLegion # then return true, is prior
-  for k, v in pairs(maxExpansionIDs) do
+  -- compare to addon.maxExpansionIDs array, if itemId less than expLegion # then return true, is prior
+  for k, v in pairs(addon.maxExpansionIDs) do
     if v.classID == itemClassID and v.subClassID == itemSubClassID then
       if itemId < v.expLegion then
         return true
@@ -226,7 +212,7 @@ local function isFromPriorExpansion(itemClassID, itemSubClassID, itemId)
     end
   end
     -- else catch all for parts, elemental, other categories, subClassID -1 indicates check for all other subclasses
-  for k, v in pairs(maxExpansionIDs) do
+  for k, v in pairs(addon.maxExpansionIDs) do
     if v.classID == itemClassID and v.subClassID == -1 then
       if itemId < v.expLegion then
         return true
@@ -236,6 +222,35 @@ local function isFromPriorExpansion(itemClassID, itemSubClassID, itemId)
     end
   end
   return false
+end
+
+------------------------------------------------------------------------------
+function setFilter:checkItem(itemId, dataArray)
+  -- returns zoneId if itemId finds a match in the array otherwise null
+  --itemId, zoneId, qty-1, label
+  for id, info in pairs(dataArray) do
+    if tonumber(itemId) == tonumber(info.itemId) then
+      --if qty is a number and matched by item quantity then mark as labeled  
+      if GetItemCount(itemId, true) == tonumber(info.qty) then return true, kPfx .. info.label .. kSfx, PRIORITY_ITEM end
+   
+      local isCurrent, zoneGroup = setFilter:isCurrentZone(info.zoneId) 
+      zoneGroup = L[zoneGroup]
+      return true, kPfx .. zoneGroup .. kSfx, kCategory
+    end
+  end
+  return false, false, false
+end
+
+----------------------------------------
+function setFilter:isCurrentZone(zoneId)
+  for id, info in pairs(addon.arrZoneCodes) do 
+    if tonumber(id) == tonumber(zoneId) then 
+      for x = 1, #info.zGroupIds do
+        if tonumber(info.zGroupIds[x]) == currZoneId then return true, info.zGroup end
+      end -- end for x
+      return false, info.zGroup 
+    end
+  end 
 end
 
 function setFilter:Filter(slotData)
@@ -250,12 +265,28 @@ function setFilter:Filter(slotData)
   if not itemMinLevel then itemMinLevel = 0 end
 
   if self.db.profile.enableMounts and itemType == MISCELLANEOUS and itemSubType == MOUNT  then return  kPfxColor2 ..'EEK!'.. kSfx, PRIORITY_ITEM end
-  if self.db.profile.enableLegendaries and itemRarity == 5 and isWeaponOrArmor then  return  kPfx .. ITEM_QUALITY5_DESC.. kSfx, kCategory end --legendaries
-  if self.db.profile.enableArtifacts and itemRarity == 6 and isWeaponOrArmor  then  return  kPfx .. ITEM_QUALITY6_DESC.. kSfx, kCategory end --Artifacts
+  -- if it's in an item set don't filter it
+
+
+  for _, equipmentSetID in pairs(C_EquipmentSet.GetEquipmentSetIDs()) do
+    local items = C_EquipmentSet.GetItemIDs(equipmentSetID)
+    for i = 1, 19 do
+      if items[i] then
+        if items[i] == bagItemID then return end
+      end
+    end
+  end 
+
+  if self.db.profile.enableHeirlooms and itemRarity == LE_ITEM_QUALITY_HEIRLOOM  then  return  ITEM_QUALITY7_DESC, kCategory end --Heirlooms
+  if self.db.profile.enableLegendaries and itemRarity == LE_ITEM_QUALITY_LEGENDARY  and isWeaponOrArmor then  return  ITEM_QUALITY5_DESC, kCategory end --legendaries
+  if self.db.profile.enableArtifacts and itemRarity == LE_ITEM_QUALITY_ARTIFACT  and isWeaponOrArmor  then  return  ITEM_QUALITY6_DESC, kCategory end --Artifacts
   if self.db.profile.enableMats and itemClassID == LE_ITEM_CLASS_TRADEGOODS and itemSubClassID ~= 16 then -- Don't group old inscription stuff
     if isFromPriorExpansion(itemClassID, itemSubClassID, bagItemID) then return kPfxTradegoods .. '#' .. itemSubType .. kSfx, kCategory end
   end
-  if self.db.profile.enableCosmetic and isWeaponOrArmor == true and itemSubClassID == LE_ITEM_ARMOR_COSMETIC then return  'Cosmetic', 'Equipment' end
+  if self.db.profile.enablePetGear then -- group Pet Battle items based on IDs from arrPetBattle
+    local itemFound, groupLabel, retCategory = setFilter:checkItem(bagItemID, addon.arrPetBattle) 
+    if itemFound == true  then return L[groupLabel], retCategory end
+  end
 
   --- Groups that require scanning tooltip
   tooltip:SetOwner(UIParent,"ANCHOR_NONE")
@@ -270,11 +301,11 @@ function setFilter:Filter(slotData)
   tooltip:Hide()
   tooltip:SetParent(nil)
   -- Pet battle items
-  if self.db.profile.enablePetGear and (tipData[2][1] == ITEM_ACCOUNTBOUND or tipData[2][1] == ITEM_BNETACCOUNTBOUND) then
+
+  if self.db.profile.enableCosmetic then
+    if C_Item.GetItemInventoryTypeByID(bagItemID) == 19 or (itemRarity == 1 and itemLevel ==1 and isWeaponOrArmor == true) then return L['Cosmetic'], kCategory end -- 19 is tabardItemType enum
     for x = 1, 6 do
-      local bPet = string.find(strupper(tipData[x][1]), 'PET BATTLE') or -1
-      local pBattle = string.find(strupper(tipData[x][1]), 'BATTLE PET')  or -1
-      if (bpet and bPet > 0) or (pBattle and pBattle > 0) then return  'Pet Battle', MISCELLANEOUS end  
+      if tipData[x][2] == L['Cosmetic'] then return L['Cosmetic'], kCategory end
     end
   end  
   -- Filter consumables, put down here because it conflicts with pet items
@@ -293,7 +324,7 @@ function setFilter:Filter(slotData)
     end
     -- Filter Lockboxes
     if self.db.profile.enableToOpen and (tipData[x][1] == ITEM_OPENABLE or tipData[x][1] == LOCKED) then
-      return  kPfx ..'Open Me!'.. kSfx, NEW
+      return  kPfx ..L['Open Me!'].. kSfx, NEW
     end
   end
 

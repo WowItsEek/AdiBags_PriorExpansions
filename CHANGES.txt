@@ -9,4 +9,4 @@
 05.30.20    v 1.06   Fixed memory bloat from tooltips
 06.01.20    v 1.07   Cleaned up constants
 06.09.20    v 1.08   More code cleanup
-06.12.20    v 1.1.0  Major code rewrite: removed string parsed arrays, replaced with name/value pairs with nested arrays. Changed strings to constants for translation as much as possible. Added pet battle, and cosmetic gear groups. Added '#' prefix to group labels for prior expansion items. Added ability to toggle color for consumable and tradegood labels.
+06.18.20    v 1.1.0  Major code rewrite: removed string parsed arrays, replaced with name/value pairs with nested arrays. Changed strings to constants for translation as much as possible. Added pet battle, heirloom and cosmetic gear groups. Added '#' prefix to group labels for prior expansion items. Added ability to toggle color for consumable and tradegood labels. Localization added for German and Spanish. 

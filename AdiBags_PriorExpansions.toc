@@ -7,10 +7,11 @@
 ## Notes: Adds filters to AdiBags seperating current items from those from older expansions
 ## Author: Eek - Earthen Ring
 ## Version: 1.1.0
-## X-Date: 2020-06-12
+## X-Date: 2020-06-18
 ## X-License: GPL v3
 ## X-Category: Bags & Inventory
 ## Dependencies: AdiBags
 
+PriorExpansionData.lua
 AdiBags_PriorExpansions.lua
 
