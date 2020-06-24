@@ -235,7 +235,7 @@ function setFilter:checkItem(itemId, dataArray)
    
       local isCurrent, zoneGroup = setFilter:isCurrentZone(info.zoneId) 
       zoneGroup = L[zoneGroup]
-      return true, kPfx .. zoneGroup .. kSfx, kCategory
+      return true, kPfx .. zoneGroup .. kSfx, zoneGroup
     end
   end
   return false, false, false
@@ -256,10 +256,14 @@ end
 function setFilter:Filter(slotData)
   if (self.db.profile.enable == false) or (slotData.itemId == false) then return end
   if self.db.profile.enableColoredLabels == true then kPfxTradegoods = kPfx else kPfxTradegoods = '' end
-
-  local itemLink = GetContainerItemLink(slotData.bag, slotData.slot)
-  local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID, bindType, expacID, _, isCraftingReagent = GetItemInfo(itemLink)
+  
+  local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID, bindType, expacID, _, isCraftingReagent = GetItemInfo(slotData.link)
   local isWeaponOrArmor = false
+  local isAzeriteGear = C_AzeriteEmpoweredItem.IsAzeriteEmpoweredItemByID(slotData.link)
+  local isEquipmentSetItem, equipmentSetName = GetContainerItemEquipmentSetInfo(slotData.bag, slotData.slot)
+  --[[
+  and isEquipmentSetItem == false 
+---]]  
   if itemClassID == LE_ITEM_CLASS_WEAPON or itemClassID == LE_ITEM_CLASS_ARMOR then isWeaponOrArmor = true end
   bagItemID = slotData.itemId
   if not itemMinLevel then itemMinLevel = 0 end
@@ -267,21 +271,11 @@ function setFilter:Filter(slotData)
   if self.db.profile.enableMounts and itemType == MISCELLANEOUS and itemSubType == MOUNT  then return  kPfxColor2 ..'EEK!'.. kSfx, PRIORITY_ITEM end
   -- if it's in an item set don't filter it
 
-
-  for _, equipmentSetID in pairs(C_EquipmentSet.GetEquipmentSetIDs()) do
-    local items = C_EquipmentSet.GetItemIDs(equipmentSetID)
-    for i = 1, 19 do
-      if items[i] then
-        if items[i] == bagItemID then return end
-      end
-    end
-  end 
-
-  if self.db.profile.enableHeirlooms and itemRarity == LE_ITEM_QUALITY_HEIRLOOM  then  return  ITEM_QUALITY7_DESC, kCategory end --Heirlooms
-  if self.db.profile.enableLegendaries and itemRarity == LE_ITEM_QUALITY_LEGENDARY  and isWeaponOrArmor then  return  ITEM_QUALITY5_DESC, kCategory end --legendaries
-  if self.db.profile.enableArtifacts and itemRarity == LE_ITEM_QUALITY_ARTIFACT  and isWeaponOrArmor  then  return  ITEM_QUALITY6_DESC, kCategory end --Artifacts
+  if self.db.profile.enableHeirlooms and isEquipmentSetItem == false and itemRarity == LE_ITEM_QUALITY_HEIRLOOM  then  return  ITEM_QUALITY7_DESC, ITEM_QUALITY7_DESC end --Heirlooms
+  if self.db.profile.enableLegendaries and isEquipmentSetItem == false and itemRarity == LE_ITEM_QUALITY_LEGENDARY  and isWeaponOrArmor then  return  ITEM_QUALITY5_DESC, ITEM_QUALITY5_DESC end --legendaries
+  if self.db.profile.enableArtifacts and isEquipmentSetItem == false and itemRarity == LE_ITEM_QUALITY_ARTIFACT  and isWeaponOrArmor  then  return  ITEM_QUALITY6_DESC, ITEM_QUALITY6_DESC end --Artifacts
   if self.db.profile.enableMats and itemClassID == LE_ITEM_CLASS_TRADEGOODS and itemSubClassID ~= 16 then -- Don't group old inscription stuff
-    if isFromPriorExpansion(itemClassID, itemSubClassID, bagItemID) then return kPfxTradegoods .. '#' .. itemSubType .. kSfx, kCategory end
+    if isFromPriorExpansion(itemClassID, itemSubClassID, bagItemID) then return kPfxTradegoods .. '#' .. itemSubType .. kSfx, '#' .. itemSubType end
   end
   if self.db.profile.enablePetGear then -- group Pet Battle items based on IDs from arrPetBattle
     local itemFound, groupLabel, retCategory = setFilter:checkItem(bagItemID, addon.arrPetBattle) 
@@ -303,14 +297,14 @@ function setFilter:Filter(slotData)
   -- Pet battle items
 
   if self.db.profile.enableCosmetic then
-    if C_Item.GetItemInventoryTypeByID(bagItemID) == 19 or (itemRarity == 1 and itemLevel ==1 and isWeaponOrArmor == true) then return L['Cosmetic'], kCategory end -- 19 is tabardItemType enum
+    if C_Item.GetItemInventoryTypeByID(bagItemID) == 19 or (itemRarity == 1 and itemLevel ==1 and isWeaponOrArmor == true) then return L['Cosmetic'], L['Cosmetic'] end -- 19 is tabardItemType enum
     for x = 1, 6 do
-      if tipData[x][2] == L['Cosmetic'] then return L['Cosmetic'], kCategory end
+      if tipData[x][2] == L['Cosmetic'] then return L['Cosmetic'], L['Cosmetic'] end
     end
   end  
   -- Filter consumables, put down here because it conflicts with pet items
   if self.db.profile.enableConsumables and (itemClassID==LE_ITEM_CLASS_CONSUMABLE or itemClassID ==LE_ITEM_CLASS_ITEM_ENHANCEMENT) then
-    if  isFromPriorExpansion(itemClassID, itemSubClassID, bagItemID) then  return kPfxTradegoods .. '#' .. itemType ..kSfx, kCategory  end 
+    if  isFromPriorExpansion(itemClassID, itemSubClassID, bagItemID) then  return kPfxTradegoods .. '#' .. itemType ..kSfx, '#' .. itemType  end 
   end
 
   for x = 1,6 do

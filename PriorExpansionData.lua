@@ -56,6 +56,11 @@ local locale = GetLocale()
    L["Separate Mount Drops"] = true	 
    L["Check to group Mounts reins so you don't space if one dropped and keep grinding needlessly."] = true	 
    L["Prior Expansion Groups"] = true	 
+   L["Other Settings"] = true	 
+   L["Other Prior Expansion filter settings"] = true	 
+   L["Colored labels"] = true	 
+   L["Prior Expansion Groups"] = true	 
+   L["Check to use colored labels for prior expansion tradegoods and consumables."] = true	 
 	 
 ----deDE	 
 if locale=="deDE" then 	 
@@ -88,6 +93,11 @@ if locale=="deDE" then
    L["Separate Mount Drops"] = "Trenne Reittiere"	 
    L["Check to group Mounts reins so you don't space if one dropped and keep grinding needlessly."] = "Hebt Reittiere in den Taschen hervor, damit sie leichter gesehen werden."	 
    L["Prior Expansion Groups"] = "TBD"	 
+   L["Other Settings"] = "Zusätzliche Einstellungen"	 
+   L["Other Prior Expansion filter settings"] = "Zusätzliche Einstellungen für Filter"	 
+   L["Colored labels"] = "Farbige Gruppen"	 
+   L["Prior Expansion Groups"] = "Gruppen für frühere Erweiterungen"	 
+   L["Check to use colored labels for prior expansion tradegoods and consumables."] = "Handwerksmaterialien und Verbrauchsgüter aus vergangenen Erweiterungen werden farbig angezeigt"	 
 end	 
 ----esMX	 
 if locale=="esMX" then 	 
@@ -120,6 +130,7 @@ if locale=="esMX" then
    L["Separate Mount Drops"] = "Gotas de montaje separadas"	 
    L["Check to group Mounts reins so you don't space if one dropped and keep grinding needlessly."] = "Marque para resaltar Monturas para que sean más fáciles de ver en bolsas."	 
    L["Prior Expansion Groups"] = "Grupos de Axpansión anteriores"	 
+   L["Prior Expansion Groups"] = "Grupos de Expansión Anteriores"	 
 end	 
 	
 for k,v in pairs(L) do if v == true then L[k] = k end end	
@@ -194,4 +205,6 @@ addon.arrZoneCodes = {
   [12]= { zGroup="REP: Nazjatar", zGroupIds={1355} },	 
   [13]= { zGroup="Reputation", zGroupIds={-1} },	 
   [14]= { zGroup="Pet Battle", zGroupIds={-1} } ,}	 
+	
+	
 	
