@@ -260,7 +260,7 @@ function setFilter:Filter(slotData)
   local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, _, _, _, _, itemClassID, itemSubClassID, bindType, expacID, _, isCraftingReagent = GetItemInfo(slotData.link)
   local isWeaponOrArmor = false
   local isAzeriteGear = C_AzeriteEmpoweredItem.IsAzeriteEmpoweredItemByID(slotData.link)
-  local isEquipmentSetItem, equipmentSetName = GetContainerItemEquipmentSetInfo(slotData.bag, slotData.slot)
+  local isEquipmentSetItem, equipmentSetName = C_Container.GetContainerItemEquipmentSetInfo(slotData.bag, slotData.slot)
   --[[
   and isEquipmentSetItem == false 
 ---]]  
