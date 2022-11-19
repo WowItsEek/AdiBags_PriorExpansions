@@ -288,7 +288,7 @@ function setFilter:Filter(slotData)
   if slotData.bag == BANK_CONTAINER then
     tooltip:SetInventoryItem("player", BankButtonIDToInvSlotID(slotData.slot, nil))
   else
-    tooltip:SetBagItem(slotData.bag, slotData.slot)
+    GameTooltip:SetBagItem(slotData.bag, slotData.slot)
   end
   tipData = {}
   for x = 1,6 do tipData[x] = {tooltip.leftTip[x]:GetText(), tooltip.rightTip[x]:GetText()} end
